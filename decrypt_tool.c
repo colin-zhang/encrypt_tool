@@ -166,7 +166,7 @@ int decrypt_file(const char* encrypt_file_path, const char *PrivKey, const char 
     uint8_t MD5result[32] = {0};
     MD5_Final(MD5result, &md5_ctx);
 
-    printf("MD5result:\n");
+    printf("md5sum:");
     phex(MD5result);
 
     if (memcmp(MD5result, header.md5sum, 16) != 0) {
@@ -202,7 +202,7 @@ int main(int argc, char const *argv[])
 
     char* privKey = get_file_data("private.pem");
     char* passwd = getpass("Input passwd:");
-    
+
     int rc = decrypt_file(argv[1], privKey, passwd, &output, &data_len);
     if (rc < 0) {
         fprintf(stderr, "Fail to encrypt %s\n", argv[1]);

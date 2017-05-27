@@ -147,7 +147,7 @@ static int encrypt_file(const char* file_path, const char* encrypt_file_path, co
     memcpy(header.key, enkey, enkey_len);
     MD5_Final(header.md5sum, &md5_ctx); 
 
-    printf("header.md5sum\n");
+    printf("md5sum:");
     phex(header.md5sum);
 
     write_file_header(&header, dfp);
