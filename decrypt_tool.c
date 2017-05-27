@@ -26,7 +26,6 @@ static void phex(uint8_t* str)
 int decrypt_key(const unsigned char* encrypted, const char *PrivKey, const char *passwd, unsigned char** decrypted, int* decrypted_len)
 {
     BIO* bp = NULL;
-    RSA* pPubKey_ = NULL;
     unsigned char* dedata = NULL;
     int encrylen = 256;
     if ((bp = BIO_new_mem_buf((void*)PrivKey, -1)) == NULL) {     
@@ -71,7 +70,7 @@ int decrypt_key(const unsigned char* encrypted, const char *PrivKey, const char 
 int decrypt_file(const char* encrypt_file_path, const char *PrivKey, const char *passwd, unsigned char** output, size_t* data_len)
 {
     ssize_t ofile_size;
-    struct encypt_file_header header = {0, };
+    struct encypt_file_header header = {0};
     unsigned char plaintext[256];
     unsigned char ciphertext[256];
 
@@ -102,6 +101,10 @@ int decrypt_file(const char* encrypt_file_path, const char *PrivKey, const char 
 
     MD5_Init(&md5_ctx);
     fread((char*)&header, 1, sizeof(header), enfp);
+    header.stamp = betoh_32(header.stamp);
+    header.ver = betoh_16(header.ver);
+    header.origin_len = betoh_64(header.origin_len);
+    header.key_len = betoh_16(header.key_len);
 
     if (decrypt_key(header.key, PrivKey, passwd, &dekey, &dekey_len) < 0) {
         fprintf(stderr, "Fail to decrypt key ");
@@ -185,9 +188,14 @@ int decrypt_file(const char* encrypt_file_path, const char *PrivKey, const char 
 
 int main(int argc, char const *argv[])
 {
-    if (argc != 2) {
+    char* key = (char*)".private.pem";
+    if (argc != 2 && argc != 3) {
         exit(0);
     }   
+    if (argc == 3) {
+        key = (char*)argv[2];
+    }
+
     if (!is_file_exit(argv[1])) {
         fprintf(stderr, "File %s is not exist\n", argv[1]);
         exit(-1);
@@ -200,7 +208,11 @@ int main(int argc, char const *argv[])
     unsigned char* output = NULL;
     size_t data_len = 0;
 
-    char* privKey = get_file_data("private.pem");
+    char* privKey = get_file_data(key);
+    if (NULL == privKey) {
+        fprintf(stderr, "can not find %s\n", key);
+        exit(-1);
+    } 
     char* passwd = getpass("Input passwd:");
 
     int rc = decrypt_file(argv[1], privKey, passwd, &output, &data_len);
@@ -208,6 +220,7 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "Fail to encrypt %s\n", argv[1]);
         return -1;
     }
+
     FILE* dfp = fopen(decyptFile, "wb");
     fwrite(output, 1, data_len, dfp);
     free(output);

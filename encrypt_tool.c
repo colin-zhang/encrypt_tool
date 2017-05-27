@@ -87,7 +87,7 @@ static int fill_file_header(FILE* fp)
 static int encrypt_file(const char* file_path, const char* encrypt_file_path, const char* PubKey)
 {
     ssize_t ofile_size;
-    struct encypt_file_header header = {0, };
+    struct encypt_file_header header = {0};
     unsigned char plaintext[256];
     unsigned char ciphertext[256];
 
@@ -138,12 +138,12 @@ static int encrypt_file(const char* file_path, const char* encrypt_file_path, co
         return -1;
     }
 
-    header.stamp = kEncryptFileStamp;
-    header.ver = kEncryptFileVer;
-    header.origin_len = ofile_size;
+    header.stamp = htobe_32(kEncryptFileStamp);
+    header.ver = htobe_16(kEncryptFileVer);
+    header.origin_len = htobe_64(ofile_size);
     header.compressed_type = 0;
     header.encrypt_type = 0;
-    header.key_len = enkey_len;
+    header.key_len = htobe_16(enkey_len);
     memcpy(header.key, enkey, enkey_len);
     MD5_Final(header.md5sum, &md5_ctx); 
 
@@ -162,17 +162,21 @@ static int encrypt_file(const char* file_path, const char* encrypt_file_path, co
 static void help()
 {
     printf( "encrypt_tool\n"
-            "\tuse ./encrypt_tool \"file to be encrypted\" \n"
+            "\tuse ./encrypt_tool \"file to be encrypted\" \"private key\"\n"
         );
 }
 
-
 int main(int argc, char const *argv[])
 {
-    if (argc != 2) {
+    char* key = (char*)".public.pem";
+    if (argc != 2 && argc != 3) {
         help();
         exit(0);
     }   
+    if (argc == 3) {
+        key = (char*)argv[2];
+    }
+
     if (!is_file_exit(argv[1])) {
         fprintf(stderr, "File %s is not exist\n", argv[1]);
         exit(-1);
@@ -182,7 +186,12 @@ int main(int argc, char const *argv[])
 
     snprintf(encyptFile, sizeof(encyptFile), "%s.encrypt", argv[1]);
     
-    char* privKey = get_file_data("public.pem");
+    char* privKey = get_file_data(key);
+    if (NULL == privKey) {
+        fprintf(stderr, "can not find %s\n", key);
+        exit(-1);
+    } 
+    
     int rc = encrypt_file(argv[1], encyptFile, privKey);
     if (rc < 0) {
         fprintf(stderr, "Fail to encrypt %s\n", argv[1]);
