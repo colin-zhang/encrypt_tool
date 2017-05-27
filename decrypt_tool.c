@@ -107,7 +107,7 @@ int decrypt_file(const char* encrypt_file_path, const char *PrivKey, const char 
     header.key_len = betoh_16(header.key_len);
 
     if (decrypt_key(header.key, PrivKey, passwd, &dekey, &dekey_len) < 0) {
-        fprintf(stderr, "Fail to decrypt key ");
+        fprintf(stderr, "Fail to decrypt key \n");
         fclose(enfp);
         return -1;
     }
