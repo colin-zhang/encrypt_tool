@@ -96,7 +96,7 @@ void FillS(std::string& out, const std::string& key) {
   if (key.size() > 0) {
     out = key.substr(0, 16);
     if (out.size() < 16) {
-      out.append(16 - out.size(), '*');
+        out.append(16 - out.size(), '*');
     }
   }
 }
@@ -123,7 +123,7 @@ int EncryptStr(const std::string& key, const std::string& iv,
 
 // minimum block is 16
 #ifdef USE_MODP_B64
-  char* outbase64 = new char[modp_b64_encode_len(str.size())];
+  char* outbase64 = new char[modp_b64_encode_len(str.size()) + 16];
   ret = (int)modp_b64_encode(outbase64, (const char*)out, outlen);
 #else
   int outbase64_len = (str.size() + 16) << 1;
